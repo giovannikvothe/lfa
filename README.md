@@ -24,7 +24,7 @@ pip install -r requirements.txt
 https://github.com/mvcisback/lstar
 ```
 
-## Resultados Esperados
+## Testes simulados:
 
 ### Teste 1: Múltiplos de 4
 
