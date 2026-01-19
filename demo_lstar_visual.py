@@ -17,7 +17,6 @@ from lstar import iterative_deeping_ce
 from functools import lru_cache
 
 def print_separator(title="", char="=", width=70):
-    """Imprime um separador visual"""
     if title:
         print("\n" + char * width)
         print(title.center(width))
@@ -26,32 +25,30 @@ def print_separator(title="", char="=", width=70):
         print(char * width)
 
 def format_word(word):
-    """Formata uma palavra para exibição"""
     if not word:
         return "ε"
     return "".join(map(str, word))
 
 def visualize_dfa(dfa, max_states=10):
-    """Visualiza um DFA de forma simples"""
     states = list(dfa.states())
     num_states = len(states)
     
     if num_states > max_states:
-        print(f"  ⚙️  DFA com {num_states} estados (demais para visualizar)")
+        print(f"DFA com {num_states} estados (demais para visualizar)")
         return
     
-    print(f"  📊 Estrutura do DFA ({num_states} estados):")
+    print(f"Estrutura do DFA ({num_states} estados):")
     
     # Mostrar estados e quais são de aceitação
-    print("  Estados:")
+    print("Estados:")
     for state in sorted(states, key=lambda x: (len(str(x)), str(x))):
         label = dfa.label(state)
         marker = "✓" if label else "✗"
         state_str = format_word(state)
-        print(f"    {marker} {state_str}")
+        print(f"{marker} {state_str}")
     
-    # Mostrar transições - mais completo e visual
-    print("  Transições:")
+    # Mostrar transições
+    print("Transições:")
     shown_transitions = set()
     
     try:
@@ -71,13 +68,12 @@ def visualize_dfa(dfa, max_states=10):
                 if (from_state, inp) not in shown_transitions:
                     from_str = format_word(from_state)
                     to_str = format_word(to_state)
-                    print(f"    {from_str:8} --[{inp}]--> {to_str:8}")
+                    print(f"{from_str:8} --[{inp}]--> {to_str:8}")
                     shown_transitions.add((from_state, inp))
                     if len(shown_transitions) >= max_transitions_to_show:
                         return
         
         # Segundo: tentar descobrir mais transições testando palavras de 2 símbolos
-        # Mas apenas se ainda não mostramos muitas transições
         if len(shown_transitions) < max_transitions_to_show:
             for inp1 in sorted(dfa.inputs):
                 for inp2 in sorted(dfa.inputs):
@@ -90,7 +86,7 @@ def visualize_dfa(dfa, max_states=10):
                         if (from_state, inp2) not in shown_transitions:
                             from_str = format_word(from_state)
                             to_str = format_word(to_state)
-                            print(f"    {from_str:8} --[{inp2}]--> {to_str:8}")
+                            print(f"{from_str:8} --[{inp2}]--> {to_str:8}")
                             shown_transitions.add((from_state, inp2))
                             if len(shown_transitions) >= max_transitions_to_show:
                                 return
@@ -109,41 +105,39 @@ def visualize_dfa(dfa, max_states=10):
                             if (from_state, inp3) not in shown_transitions:
                                 from_str = format_word(from_state)
                                 to_str = format_word(to_state)
-                                print(f"    {from_str:8} --[{inp3}]--> {to_str:8}")
+                                print(f"{from_str:8} --[{inp3}]--> {to_str:8}")
                                 shown_transitions.add((from_state, inp3))
                                 if len(shown_transitions) >= max_transitions_to_show:
                                     return
         
         # Se não descobrimos transições suficientes, informar
         if not shown_transitions:
-            print("    (testando transições...)")
+            print("(testando transições...)")
             
     except Exception as e:
-        # Se falhar, apenas pular transições
         pass
 
 def demonstrate_learning_with_steps(inputs, label_func, label_name, depth=10, test_cases=None, outputs=None):
-    """Demonstra o aprendizado mostrando cada passo"""
     print_separator(f"APRENDIZADO: {label_name}", "=", 80)
     
-    print(f"\n📝 Linguagem: {label_name}")
-    print(f"📝 Alfabeto: {inputs}")
+    print(f"\nLinguagem: {label_name}")
+    print(f"Alfabeto: {inputs}")
     
     # Mostrar alguns exemplos da função
-    print("\n📋 Exemplos de Membership Queries:")
+    print("\nExemplos de Membership Queries:")
     example_words = [(), (0,), (1,), (0, 1), (1, 1), (1, 1, 1), (1, 1, 1, 1)]
     for word in example_words:
         result = label_func(word)
         word_str = format_word(word)
-        # Para resultados booleanos, usar ✓/✗; para números, apenas mostrar
+
         if isinstance(result, bool):
             marker = "✓" if result else "✗"
-            print(f"  {marker} label({word_str:12}) = {result}")
+            print(f"{marker} label({word_str:12}) = {result}")
         else:
-            print(f"  → label({word_str:12}) = {result}")
+            print(f"→ label({word_str:12}) = {result}")
     
     print("\n" + "─" * 80)
-    print("🔄 INICIANDO APRENDIZADO COM ALGORITMO L*")
+    print("INICIANDO APRENDIZADO COM ALGORITMO L*")
     print("─" * 80)
     
     # Usar _learn_dfa para ver cada iteração
@@ -157,21 +151,21 @@ def demonstrate_learning_with_steps(inputs, label_func, label_name, depth=10, te
             dfa_final = dfa  # Guardar o último DFA
             
             print(f"\n{'='*80}")
-            print(f"🔄 ITERAÇÃO {iteration}")
+            print(f"ITERAÇÃO {iteration}")
             print(f"{'='*80}")
             
             if iteration == 1:
-                print("💡 Esta é a hipótese INICIAL - pode ter erros (isso é normal!)")
-                print("   O algoritmo vai usar os erros para refinar a hipótese.")
+                print("Hipótese inicial - pode conter erros")
+                print("O algoritmo vai usar os erros(contra-exemplos) para refinar a hipótese.")
             
             num_states = len(dfa.states())
-            print(f"📊 Hipótese {iteration}: DFA com {num_states} estado(s)")
+            print(f"Hipótese {iteration}: DFA com {num_states} estado(s)")
             
             # Visualizar DFA
             visualize_dfa(dfa)
             
             # Testar alguns casos
-            print(f"\n🧪 Testando algumas palavras:")
+            print(f"\nTestando algumas palavras:")
             test_words = [(), (1,), (1, 1), (1, 1, 1), (1, 1, 1, 1)]
             for word in test_words:
                 result = dfa.label(word)
@@ -180,19 +174,14 @@ def demonstrate_learning_with_steps(inputs, label_func, label_name, depth=10, te
                 match = "✓" if result == expected else "✗"
                 if result == expected:
                     status = "CORRETO"
-                    print(f"  {match} {word_str:12} -> {result} (esperado: {expected}) [{status}]")
+                    print(f"{match} {word_str:12} -> {result} (esperado: {expected}) [{status}]")
                 else:
                     status = "DIVERGÊNCIA"
-                    print(f"  {match} {word_str:12} -> {result} (esperado: {expected}) [{status}] ⚠️")
-            
-            print("\n💡 Nota: Erros nas primeiras iterações são ESPERADOS e necessários para o aprendizado!")
-            print("   O algoritmo usa esses erros (contra-exemplos) para refinar a hipótese.")
-            print("\n⏳ Buscando contra-exemplo para refinar a hipótese...")
-            time.sleep(0.5)  # Pequena pausa para visualização
+                    print(f"{match} {word_str:12} -> {result} (esperado: {expected}) [{status}]")
         
-        # Última hipótese (sem contra-exemplo) - o loop terminou, então dfa_final já é o correto
+        # Última hipótese, dfa_final já é o correto
         print(f"\n{'='*80}")
-        print(f"✅ CONVERGÊNCIA ALCANÇADA - ITERAÇÃO {iteration}")
+        print(f"CONVERGÊNCIA ALCANÇADA - ITERAÇÃO {iteration}")
         print(f"{'='*80}")
         
         if dfa_final is None:
@@ -201,14 +190,14 @@ def demonstrate_learning_with_steps(inputs, label_func, label_name, depth=10, te
             dfa_final = learn_dfa(inputs, label_func, iterative_deeping_ce(label_func, depth=depth), outputs)
         
         num_states = len(dfa_final.states())
-        print(f"🎯 DFA Final: {num_states} estado(s)")
+        print(f"DFA Final: {num_states} estado(s)")
         
         visualize_dfa(dfa_final)
         
         # Validação completa
         if test_cases:
             print(f"\n{'─'*80}")
-            print("✅ VALIDAÇÃO FINAL")
+            print("VALIDAÇÃO FINAL")
             print(f"{'─'*80}")
             all_passed = True
             for word, expected in test_cases:
@@ -217,20 +206,20 @@ def demonstrate_learning_with_steps(inputs, label_func, label_name, depth=10, te
                 match = "✓" if result == expected else "✗"
                 if result != expected:
                     all_passed = False
-                # Formatar resultado e esperado adequadamente
+                
                 result_str = str(result)
                 expected_str = str(expected)
-                print(f"  {match} {word_str:15} -> {result_str:5} (esperado: {expected_str:5})")
+                print(f"{match} {word_str:15} -> {result_str:5} (esperado: {expected_str:5})")
             
             if all_passed:
-                print("✅ TODOS OS TESTES PASSARAM!")
+                print("TODOS OS TESTES PASSARAM!")
             else:
-                print("⚠️  ALGUNS TESTES FALHARAM!")
+                print("ALGUNS TESTES FALHARAM!")
         
         return dfa_final
         
     except Exception as e:
-        print(f"\n❌ ERRO: {e}")
+        print(f"\nERRO: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -264,10 +253,10 @@ def main():
         test_cases=test_cases_1
     )
     
-    input("\n⏸️  Pressione ENTER para continuar com o próximo teste...")
+    input("\nPressione ENTER para continuar com o próximo teste...")
     
     # ============================================================================
-    # TESTE 2: Moore Machine (mais simples para visualizar)
+    # TESTE 2: Moore Machine
     # ============================================================================
     print("\n\n")
     def sum_mod_4(word):
@@ -290,10 +279,10 @@ def main():
         outputs={0, 1, 2, 3}
     )
     
-    input("\n⏸️  Pressione ENTER para continuar com o último teste...")
+    input("\nPressione ENTER para continuar com o último teste...")
     
     # ============================================================================
-    # TESTE 3: Número Par de 1's (mais simples)
+    # TESTE 3: Número Par de 1's
     # ============================================================================
     print("\n\n")
     @lru_cache(maxsize=None)
@@ -321,18 +310,10 @@ def main():
     # ============================================================================
     print_separator("RESUMO DA DEMONSTRAÇÃO", "=", 80)
     
-    print("\n📊 Resultados:")
-    print(f"  ✓ TESTE 1 (Múltiplos de 4):      {len(dfa1.states()) if dfa1 else 0} estados")
-    print(f"  ✓ TESTE 2 (Moore Machine):       {len(dfa2.states()) if dfa2 else 0} estados")
-    print(f"  ✓ TESTE 3 (Número Par):          {len(dfa3.states()) if dfa3 else 0} estados")
-    
-    print("\n🎓 Conceitos Demonstrados:")
-    print("  • Membership Queries (queries de pertinência)")
-    print("  • Equivalence Queries (queries de equivalência)")
-    print("  • Contra-exemplos e refinamento de hipóteses")
-    print("  • Árvore de classificação (Classification Tree)")
-    print("  • Aprendizado iterativo até convergência")
-    print("  • Moore Machines vs DFAs simples")
+    print("\nResultados:")
+    print(f"✓ TESTE 1 (Múltiplos de 4):      {len(dfa1.states()) if dfa1 else 0} estados")
+    print(f"✓ TESTE 2 (Moore Machine):       {len(dfa2.states()) if dfa2 else 0} estados")
+    print(f"✓ TESTE 3 (Número Par):          {len(dfa3.states()) if dfa3 else 0} estados")
     
     print_separator("DEMONSTRAÇÃO CONCLUÍDA!", "=", 80)
 

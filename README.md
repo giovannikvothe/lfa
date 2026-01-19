@@ -26,11 +26,8 @@ https://github.com/mvcisback/lstar
 
 ## Resultados Esperados
 
-### TESTE 1: Múltiplos de 4
-- 4 estados
+### Teste 1: Múltiplos de 4
 
-### TESTE 2: Moore Machine
-- 4 estados
+### Teste 2: Moore Machine
 
-### TESTE 3: Número Par
-- 2 estados
+### Teste 3: Número Par
