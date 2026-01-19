@@ -1,3 +1,9 @@
+### Alunos
+```
+Giovanni Almeida Dutra - 202465035AC
+Hugo Nogueira Carvalho - 202065251AC
+```
+
 # Demonstração do Algoritmo L*
 
 ## Arquivos Criados
