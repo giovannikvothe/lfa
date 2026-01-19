@@ -2,3 +2,4 @@ funcy>=1.12
 attrs>=22
 lazytree>=0.3.2
 dfa>=4
+git+https://github.com/USUARIO/REPO.git@9411f01
