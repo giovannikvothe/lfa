@@ -15,7 +15,7 @@ Hugo Nogueira Carvalho - 202065251AC
 
 ### Executar Demonstração Completa
 ```
-python demo_lstar_completo.py
+python demo_lstar_visual.py
 ```
 
 ## Pré-requisitos
