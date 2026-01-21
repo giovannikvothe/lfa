@@ -22,7 +22,7 @@ python demo_lstar_completo.py
 
 Certifique-se de que as dependências estão instaladas:
 ```
-pip install -r requirements.txt
+pip install -r requirements.txt || python -m pip install -r requirements.txt
 ```
 
 ## Link do repositório L*
