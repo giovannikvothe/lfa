@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lstar'))
 from lstar.learn import _learn_dfa
 from lstar import iterative_deeping_ce
 from functools import lru_cache
+from dfa import dfa2dict
 
 def print_separator(title="", char="=", width=70):
     if title:
@@ -30,92 +31,81 @@ def format_word(word):
     return "".join(map(str, word))
 
 def visualize_dfa(dfa, max_states=10):
+    """
+    Mostra TODAS as transições do DFA (não mais apenas uma amostra).
+
+    Observação: para evitar poluir demais a tela, se o número de estados
+    for maior que `max_states`, apenas avisamos e não listamos tudo.
+    """
     states = list(dfa.states())
     num_states = len(states)
-    
+
     if num_states > max_states:
-        print(f"DFA com {num_states} estados (demais para visualizar)")
+        print(f"DFA com {num_states} estados (demais para visualizar todas as transições)")
         return
-    
+
     print(f"Estrutura do DFA ({num_states} estados):")
-    
+
     # Mostrar estados e quais são de aceitação
     print("Estados:")
-    for state in sorted(states, key=lambda x: (len(str(x)), str(x))):
+    sorted_states = sorted(states, key=lambda x: (len(str(x)), str(x)))
+    for state in sorted_states:
         label = dfa.label(state)
         marker = "✓" if label else "✗"
         state_str = format_word(state)
         print(f"{marker} {state_str}")
+
+    # Mostrar TODAS as transições (estado, símbolo) -> próximo estado
+    print("Transições (completas):")
     
-    # Mostrar transições
-    print("Transições:")
-    shown_transitions = set()
-    
-    try:
-        # Estratégia: descobrir transições testando palavras curtas
-        # Começar com palavras de 1 símbolo (transições do estado inicial)
-        # Depois tentar palavras de 2 símbolos para descobrir mais transições
-        
-        max_transitions_to_show = min(num_states * 2, 10)  # Limitar número de transições mostradas
-        
-        # Primeiro: transições do estado inicial (palavras de 1 símbolo)
+    # Coletar todas as transições de forma sistemática
+    all_transitions = []
+    for state in sorted_states:
+        from_str = format_word(state)
         for inp in sorted(dfa.inputs):
-            word = (inp,)
-            trace = list(dfa.trace(word))
-            if len(trace) >= 2:
-                from_state = trace[0]
-                to_state = trace[-1]
-                if (from_state, inp) not in shown_transitions:
-                    from_str = format_word(from_state)
-                    to_str = format_word(to_state)
-                    print(f"{from_str:8} --[{inp}]--> {to_str:8}")
-                    shown_transitions.add((from_state, inp))
-                    if len(shown_transitions) >= max_transitions_to_show:
-                        return
-        
-        # Segundo: tentar descobrir mais transições testando palavras de 2 símbolos
-        if len(shown_transitions) < max_transitions_to_show:
-            for inp1 in sorted(dfa.inputs):
-                for inp2 in sorted(dfa.inputs):
-                    word = (inp1, inp2)
-                    trace = list(dfa.trace(word))
-                    if len(trace) >= 3:
-                        # Pegar a transição do segundo símbolo (penúltimo -> último)
-                        from_state = trace[-2] if len(trace) >= 2 else trace[0]
-                        to_state = trace[-1]
-                        if (from_state, inp2) not in shown_transitions:
-                            from_str = format_word(from_state)
-                            to_str = format_word(to_state)
-                            print(f"{from_str:8} --[{inp2}]--> {to_str:8}")
-                            shown_transitions.add((from_state, inp2))
-                            if len(shown_transitions) >= max_transitions_to_show:
-                                return
-        
-        # Terceiro: se ainda não mostramos muitas, testar mais combinações
-        if len(shown_transitions) < max_transitions_to_show and num_states <= 4:
-            # Para DFAs pequenos, testar palavras de 3 símbolos
-            for inp1 in sorted(dfa.inputs):
-                for inp2 in sorted(dfa.inputs):
-                    for inp3 in sorted(dfa.inputs):
-                        word = (inp1, inp2, inp3)
-                        trace = list(dfa.trace(word))
-                        if len(trace) >= 4:
-                            from_state = trace[-2]
+            try:
+                # Tentar usar o método transition diretamente
+                to_state = None
+                if hasattr(dfa, 'transition'):
+                    try:
+                        to_state = dfa.transition(state, inp)
+                    except:
+                        pass
+                
+                # Se transition não funcionou, usar trace
+                if to_state is None:
+                    try:
+                        word_from_state = state + (inp,)
+                        trace = list(dfa.trace(word_from_state))
+                        if trace:
                             to_state = trace[-1]
-                            if (from_state, inp3) not in shown_transitions:
-                                from_str = format_word(from_state)
-                                to_str = format_word(to_state)
-                                print(f"{from_str:8} --[{inp3}]--> {to_str:8}")
-                                shown_transitions.add((from_state, inp3))
-                                if len(shown_transitions) >= max_transitions_to_show:
-                                    return
-        
-        # Se não descobrimos transições suficientes, informar
-        if not shown_transitions:
-            print("(testando transições...)")
-            
-    except Exception as e:
-        pass
+                    except:
+                        pass
+                
+                # Se ainda não temos o estado, tentar usar dfa2dict
+                if to_state is None:
+                    try:
+                        dfa_dict = dfa2dict(dfa)
+                        # dfa2dict retorna (start, inputs, transitions, outputs, label)
+                        # transitions é um dict: {state: {symbol: next_state}}
+                        if len(dfa_dict) >= 3:
+                            transitions_dict = dfa_dict[2]
+                            if state in transitions_dict and inp in transitions_dict[state]:
+                                to_state = transitions_dict[state][inp]
+                    except:
+                        pass
+                
+                if to_state is not None:
+                    to_str = format_word(to_state)
+                    all_transitions.append((from_str, inp, to_str))
+                else:
+                    print(f"{from_str:8} --[{inp}]--> (não encontrado)")
+            except Exception as e:
+                print(f"{from_str:8} --[{inp}]--> (erro: {type(e).__name__})")
+    
+    # Imprimir todas as transições encontradas, ordenadas
+    for from_str, inp, to_str in sorted(all_transitions):
+        print(f"{from_str:8} --[{inp}]--> {to_str:8}")
 
 def demonstrate_learning_with_steps(inputs, label_func, label_name, depth=10, test_cases=None, outputs=None):
     print_separator(f"APRENDIZADO: {label_name}", "=", 80)
@@ -204,16 +194,16 @@ def demonstrate_learning_with_steps(inputs, label_func, label_name, depth=10, te
             # Ajustar testes para o caso de múltiplos de 4
             if "múltiplos de 4" in label_name.lower():
                 test_words = [
-                    (),                         # 0 uns  -> múltiplo de 4
-                    (1,),                       # 1
-                    (1, 1,),                    # 2
-                    (1, 1, 1),                  # 3
-                    (1, 1, 1, 1),               # 4
-                    (1, 1, 1, 1, 1),            # 5
-                    (1, 1, 1, 1, 1, 1, 1, 1),   # 8
-                    (0, 1, 1, 1, 1),            # 4 uns com zero
-                    (1, 1, 0, 1),               # 3 uns
-                    (1, 0, 1, 0, 1, 1),         # 4 uns espalhados
+                    (),                         
+                    (1,),                       
+                    (1, 1,),                    
+                    (1, 1, 1),                  
+                    (1, 1, 1, 1),               
+                    (1, 1, 1, 1, 1),           
+                    (1, 1, 1, 1, 1, 1, 1, 1),   
+                    (0, 1, 1, 1, 1),           
+                    (1, 1, 0, 1),               
+                    (1, 0, 1, 0, 1, 1),         
                 ]
 
             # Cabeçalho mais legível
