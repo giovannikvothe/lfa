@@ -1,6 +1,6 @@
 """
 Giovanni Almeida Dutra - 202465035AC
-Hugo Nogueira Carvalho - 
+Hugo Nogueira Carvalho - 202065251AC
 Script de Demonstração Visual do Algoritmo L*
 Mostra o passo a passo do aprendizado de forma visual e interativa
 """
@@ -125,7 +125,29 @@ def demonstrate_learning_with_steps(inputs, label_func, label_name, depth=10, te
     
     # Mostrar alguns exemplos da função
     print("\nExemplos de Membership Queries:")
-    example_words = [(), (0,), (1,), (0, 1), (1, 1), (1, 1, 1), (1, 1, 1, 1)]
+
+    # Conjunto padrão de exemplos
+    example_words = [
+        (),            # palavra vazia
+        (0,), (1,),
+        (1, 0), (0, 1),
+        (1, 1),
+        (1, 1, 1),
+        (1, 1, 1, 1),
+    ]
+
+    # Ajustar exemplos quando a linguagem é "múltiplos de 4"
+    if "múltiplos de 4" in label_name.lower():
+        example_words = [
+            (),                         # 0 uns  -> múltiplo de 4
+            (1,),                       # 1 um   -> não
+            (1, 1),                     # 2 uns  -> não
+            (1, 1, 1),                  # 3 uns  -> não
+            (1, 1, 1, 1),               # 4 uns  -> sim
+            (0, 1, 1, 1, 1),            # 4 uns espalhados -> sim
+            (1, 1, 0, 1),               # 3 uns -> não
+            (1, 1, 1, 1, 1),            # 5 uns -> não
+        ]
     for word in example_words:
         result = label_func(word)
         word_str = format_word(word)
@@ -166,18 +188,53 @@ def demonstrate_learning_with_steps(inputs, label_func, label_name, depth=10, te
             
             # Testar alguns casos
             print(f"\nTestando algumas palavras:")
-            test_words = [(), (1,), (1, 1), (1, 1, 1), (1, 1, 1, 1)]
+
+            # Conjunto padrão de testes
+            test_words = [
+                (),                 # vazia
+                (1,),
+                (1, 1),
+                (1, 1, 1),
+                (1, 1, 1, 1),
+                (1, 0, 1),
+                (0, 1, 1),
+                (1, 1, 0, 1),
+            ]
+
+            # Ajustar testes para o caso de múltiplos de 4
+            if "múltiplos de 4" in label_name.lower():
+                test_words = [
+                    (),                         # 0 uns  -> múltiplo de 4
+                    (1,),                       # 1
+                    (1, 1,),                    # 2
+                    (1, 1, 1),                  # 3
+                    (1, 1, 1, 1),               # 4
+                    (1, 1, 1, 1, 1),            # 5
+                    (1, 1, 1, 1, 1, 1, 1, 1),   # 8
+                    (0, 1, 1, 1, 1),            # 4 uns com zero
+                    (1, 1, 0, 1),               # 3 uns
+                    (1, 0, 1, 0, 1, 1),         # 4 uns espalhados
+                ]
+
+            # Cabeçalho mais legível
+            print(f"{'palavra':12} | {'#1s':>3} | {'label real':>10} | {'DFA':>5} | status")
+            print("-" * 60)
+
             for word in test_words:
                 result = dfa.label(word)
                 expected = label_func(word)
                 word_str = format_word(word)
+
+                # número de 1s (útil para múltiplos de 4)
+                ones_count = word.count(1)
+
                 match = "✓" if result == expected else "✗"
-                if result == expected:
-                    status = "CORRETO"
-                    print(f"{match} {word_str:12} -> {result} (esperado: {expected}) [{status}]")
-                else:
-                    status = "DIVERGÊNCIA"
-                    print(f"{match} {word_str:12} -> {result} (esperado: {expected}) [{status}]")
+                status = "CORRETO" if result == expected else "DIVERGÊNCIA"
+
+                print(
+                    f"{word_str:12} | {ones_count:>3} | "
+                    f"{str(expected):>10} | {str(result):>5} | {status}"
+                )
         
         # Última hipótese, dfa_final já é o correto
         print(f"\n{'='*80}")
@@ -212,9 +269,9 @@ def demonstrate_learning_with_steps(inputs, label_func, label_name, depth=10, te
                 print(f"{match} {word_str:15} -> {result_str:5} (esperado: {expected_str:5})")
             
             if all_passed:
-                print("TODOS OS TESTES PASSARAM!")
+                print("\nTODOS OS TESTES PASSARAM!")
             else:
-                print("ALGUNS TESTES FALHARAM!")
+                print("\nALGUNS TESTES FALHARAM!")
         
         return dfa_final
         
@@ -229,7 +286,33 @@ def main():
     print_separator("Aprendizado de Autômatos Finitos", "=", 80)
     
     # ============================================================================
-    # TESTE 1: Múltiplos de 4
+    # TESTE 1: Número Par de 1's
+    # ============================================================================
+    print("\n\n")
+    @lru_cache(maxsize=None)
+    def even_ones(word):
+        return (word.count(1) % 2) == 0
+    
+    test_cases_3 = [
+        ((), True),
+        ((1,), False),
+        ((1, 1,), True),
+        ((1, 1, 1), False),
+        ((0, 1, 0, 1), True),
+    ]
+    
+    dfa3 = demonstrate_learning_with_steps(
+        inputs={0, 1},
+        label_func=even_ones,
+        label_name="Número Par de 1's",
+        depth=8,
+        test_cases=test_cases_3
+    )
+
+    input("\nPressione ENTER para continuar com o próximo teste...")
+
+    # ============================================================================
+    # TESTE 2: Múltiplos de 4
     # ============================================================================
     @lru_cache(maxsize=None)
     def is_mult_4(word):
@@ -256,7 +339,7 @@ def main():
     input("\nPressione ENTER para continuar com o próximo teste...")
     
     # ============================================================================
-    # TESTE 2: Moore Machine
+    # TESTE 3: Moore Machine
     # ============================================================================
     print("\n\n")
     def sum_mod_4(word):
@@ -279,31 +362,7 @@ def main():
         outputs={0, 1, 2, 3}
     )
     
-    input("\nPressione ENTER para continuar com o último teste...")
-    
-    # ============================================================================
-    # TESTE 3: Número Par de 1's
-    # ============================================================================
-    print("\n\n")
-    @lru_cache(maxsize=None)
-    def even_ones(word):
-        return (word.count(1) % 2) == 0
-    
-    test_cases_3 = [
-        ((), True),
-        ((1,), False),
-        ((1, 1,), True),
-        ((1, 1, 1), False),
-        ((0, 1, 0, 1), True),
-    ]
-    
-    dfa3 = demonstrate_learning_with_steps(
-        inputs={0, 1},
-        label_func=even_ones,
-        label_name="Número Par de 1's",
-        depth=8,
-        test_cases=test_cases_3
-    )
+    input("\nPressione ENTER para ver o resumo...")
     
     # ============================================================================
     # RESUMO
@@ -311,9 +370,9 @@ def main():
     print_separator("RESUMO DA DEMONSTRAÇÃO", "=", 80)
     
     print("\nResultados:")
-    print(f"✓ TESTE 1 (Múltiplos de 4):      {len(dfa1.states()) if dfa1 else 0} estados")
-    print(f"✓ TESTE 2 (Moore Machine):       {len(dfa2.states()) if dfa2 else 0} estados")
-    print(f"✓ TESTE 3 (Número Par):          {len(dfa3.states()) if dfa3 else 0} estados")
+    print(f"✓ TESTE 1 (Número Par):          {len(dfa3.states()) if dfa3 else 0} estados")
+    print(f"✓ TESTE 2 (Múltiplos de 4):      {len(dfa1.states()) if dfa1 else 0} estados")
+    print(f"✓ TESTE 3 (Moore Machine):       {len(dfa2.states()) if dfa2 else 0} estados")
     
     print_separator("DEMONSTRAÇÃO CONCLUÍDA!", "=", 80)
 
